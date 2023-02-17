@@ -15,8 +15,11 @@ public class CurrencyExchangeService {
         this.concurrentCurrencyExchangeCache = new ConcurrentInMemoryCache<>();
     }
 
-    public void saveCurrencyExchangeRate(CurrencyExchange exchangeRecord) {
-        concurrentCurrencyExchangeCache.put(exchangeRecord.generateKey(), exchangeRecord);
+    public void saveCurrencyExchangeRate(
+            CurrencyExchange exchangeRecord,
+            long ttlMillis
+    ) {
+        concurrentCurrencyExchangeCache.put(exchangeRecord.generateKey(), exchangeRecord, ttlMillis);
     }
 
     public BigDecimal getCurrencyExchangeRate(String key) {
