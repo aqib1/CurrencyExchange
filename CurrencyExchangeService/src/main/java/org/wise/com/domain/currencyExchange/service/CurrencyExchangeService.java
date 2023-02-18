@@ -1,29 +1,32 @@
 package org.wise.com.domain.currencyExchange.service;
 
-import org.wise.com.domain.cache.ConcurrentInMemoryCache;
+import org.wise.com.domain.cache.InMemoryCache;
 import org.wise.com.domain.currencyExchange.exception.CurrencyExchangeKeyNotFoundException;
 import org.wise.com.domain.currencyExchange.record.CurrencyExchange;
 
 import java.math.BigDecimal;
 import java.util.Objects;
+import java.util.Optional;
 
 public class CurrencyExchangeService {
-    private final ConcurrentInMemoryCache<String, CurrencyExchange>
-            concurrentCurrencyExchangeCache;
+    private final InMemoryCache<String, CurrencyExchange>
+            currencyExchangeCache;
 
-    public CurrencyExchangeService() {
-        this.concurrentCurrencyExchangeCache = new ConcurrentInMemoryCache<>();
+    public CurrencyExchangeService(
+            InMemoryCache<String, CurrencyExchange> currencyExchangeCache
+    ) {
+        this.currencyExchangeCache = currencyExchangeCache;
     }
 
     public void saveCurrencyExchangeRate(
             CurrencyExchange exchangeRecord,
             long ttlMillis
     ) {
-        concurrentCurrencyExchangeCache.put(exchangeRecord.generateKey(), exchangeRecord, ttlMillis);
+        currencyExchangeCache.put(exchangeRecord.generateKey(), exchangeRecord, Optional.of(ttlMillis));
     }
 
     public BigDecimal getCurrencyExchangeRate(String key) {
-        var currencyExchange = concurrentCurrencyExchangeCache.get(key);
+        var currencyExchange = currencyExchangeCache.get(key);
         if(Objects.isNull(currencyExchange)) {
             throw new CurrencyExchangeKeyNotFoundException(
                     String.format("Key %s not found in cache", key)
@@ -33,6 +36,6 @@ public class CurrencyExchangeService {
     }
 
     public void clearAll() {
-        this.concurrentCurrencyExchangeCache.clear();
+        this.currencyExchangeCache.clear();
     }
 }

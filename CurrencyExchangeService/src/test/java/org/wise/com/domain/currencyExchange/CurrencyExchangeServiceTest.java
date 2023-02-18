@@ -1,21 +1,30 @@
 package org.wise.com.domain.currencyExchange;
 
 import org.junit.jupiter.api.Test;
+import org.wise.com.domain.cache.CacheEntry;
+import org.wise.com.domain.cache.InMemoryCache;
+import org.wise.com.domain.cache.eviction.CacheEviction;
+import org.wise.com.domain.cache.eviction.LRUEviction;
 import org.wise.com.domain.currencyExchange.exception.CurrencyExchangeKeyNotFoundException;
 import org.wise.com.domain.currencyExchange.record.CurrencyExchange;
 import org.wise.com.domain.currencyExchange.service.CurrencyExchangeService;
 
 import java.math.BigDecimal;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CurrencyExchangeServiceTest {
+    private static final int MAX_SIZE = 20;
     private final CurrencyExchangeService currencyExchangeService;
 
     public CurrencyExchangeServiceTest() {
-        this.currencyExchangeService = new CurrencyExchangeService();
+        Map<String, CacheEntry<CurrencyExchange>> concurrentMap = new ConcurrentHashMap<>();
+        CacheEviction<String> eviction = new LRUEviction<>(concurrentMap, MAX_SIZE);
+        InMemoryCache<String, CurrencyExchange> cache = new InMemoryCache<>(eviction, concurrentMap);
+        this.currencyExchangeService = new CurrencyExchangeService(cache);
     }
 
     @Test
@@ -75,24 +84,25 @@ public class CurrencyExchangeServiceTest {
     }
 
     @Test
-    public void get_CurrencyExchangeWhenKeyIsExpired_ShouldThrowException() throws InterruptedException {
+    public void get_CurrencyExchangeWhenKeyLimitExceed_ShouldThrowException() throws InterruptedException {
         // given
-        var currencyExchangeRecord = new CurrencyExchange(
-                "USD",
-                "PKR",
-                BigDecimal.valueOf(281)
-        );
-        currencyExchangeService.saveCurrencyExchangeRate(
-                currencyExchangeRecord,
-                500
-        );
+        for(int i = 0; i <= 22; i++) {
+            var currencyExchangeRecord = new CurrencyExchange(
+                    "USD" + i,
+                    "PKR",
+                    BigDecimal.valueOf(281)
+            );
+            currencyExchangeService.saveCurrencyExchangeRate(
+                    currencyExchangeRecord,
+                    0
+            );
+        }
 
-        TimeUnit.SECONDS.sleep(1);
 
         // when & then
         assertThrows(CurrencyExchangeKeyNotFoundException.class,
                 () -> currencyExchangeService.getCurrencyExchangeRate(
-                        currencyExchangeRecord.generateKey()
+                        "USD0"
                 ));
     }
 }

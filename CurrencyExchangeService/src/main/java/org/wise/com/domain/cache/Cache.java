@@ -1,9 +1,13 @@
 package org.wise.com.domain.cache;
 
-public sealed interface Cache<K, V> permits ConcurrentInMemoryCache {
+import java.util.Map;
+import java.util.Optional;
+
+public sealed interface Cache<K, V> permits InMemoryCache {
     V get(K key);
-    void put(K key, V value, long ttlMillis);
+    void put(K key, V value, Optional<Long> ttlMillis);
     void remove(K key);
     void clear();
     boolean isEmpty();
+    Map<K, CacheEntry<V>> getStore();
 }
