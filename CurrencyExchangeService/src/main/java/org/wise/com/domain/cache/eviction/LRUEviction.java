@@ -18,12 +18,21 @@ public non-sealed class LRUEviction<K, V> implements CacheEviction<K> {
 
     @Override
     public synchronized void evict(K key) {
-        this.orderedKey.remove(key);
-        this.orderedKey.add(key);
+        refreshOrder(key);
+        removeIfExceed();
+
+    }
+
+    private void removeIfExceed() {
         if (this.cache.size() >= maxSize) {
             var oldestKey = this.orderedKey.getFirst();
             orderedKey.remove(oldestKey);
             this.cache.remove(oldestKey);
         }
+    }
+
+    private void refreshOrder(K key) {
+        this.orderedKey.remove(key);
+        this.orderedKey.add(key);
     }
 }

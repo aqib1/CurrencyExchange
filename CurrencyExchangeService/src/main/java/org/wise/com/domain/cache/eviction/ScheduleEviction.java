@@ -5,6 +5,7 @@ import org.wise.com.domain.cache.eviction.schedule.CacheCleanupTask;
 
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public non-sealed class ScheduleEviction<K, V> implements CacheEviction<K> {
@@ -13,6 +14,7 @@ public non-sealed class ScheduleEviction<K, V> implements CacheEviction<K> {
     private final int initialDelay;
     private final int period;
     private final TimeUnit timeUnit;
+    private ScheduledExecutorService service;
 
     public ScheduleEviction(
             Map<K, CacheEntry<V>> cache,
@@ -26,18 +28,22 @@ public non-sealed class ScheduleEviction<K, V> implements CacheEviction<K> {
         this.period = period;
         this.timeUnit = timeUnit;
         this.cleanupTask = new CacheCleanupTask<>(cache);
-        startScheduler();
+        initAndStartScheduler();
     }
 
+    private void initAndStartScheduler() {
+        service = Executors.newScheduledThreadPool(corePoolSize);
+        service.scheduleAtFixedRate(
+                cleanupTask,
+                initialDelay,
+                period,
+                timeUnit
+        );
+    }
 
-    public void startScheduler() {
-        try (var scheduleExecutor = Executors.newScheduledThreadPool(corePoolSize)) {
-            scheduleExecutor.scheduleAtFixedRate(
-                    cleanupTask,
-                    initialDelay,
-                    period,
-                    timeUnit
-            );
+    public void shutDown() {
+        if (service != null && !service.isShutdown()) {
+            service.shutdown();
         }
     }
 }
