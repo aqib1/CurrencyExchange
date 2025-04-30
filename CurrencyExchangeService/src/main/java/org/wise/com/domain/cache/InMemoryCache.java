@@ -45,9 +45,4 @@ public non-sealed class InMemoryCache<K, V> implements Cache<K, V> {
     public boolean isEmpty() {
         return this.cache.isEmpty();
     }
-
-    @Override
-    public Map<K, CacheEntry<V>> getStore() {
-        return this.cache;
-    }
 }

@@ -33,6 +33,8 @@ public non-sealed class LRUEviction<K, V> implements CacheEviction<K> {
 
     private void refreshOrder(K key) {
         this.orderedKey.remove(key);
-        this.orderedKey.add(key);
+        if(cache.containsKey(key)) {
+            this.orderedKey.add(key);
+        }
     }
 }

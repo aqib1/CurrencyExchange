@@ -9,5 +9,4 @@ public sealed interface Cache<K, V> permits InMemoryCache {
     void remove(K key);
     void clear();
     boolean isEmpty();
-    Map<K, CacheEntry<V>> getStore();
 }
